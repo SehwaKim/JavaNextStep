@@ -28,7 +28,7 @@ public class LambdaPractice {
         };
 
         //람다식으로 MyFunction의 익명클래스를 대체해보자
-        func = (a, b) -> a > b ? a : b; //함수형 인터페이스의 메소드 오버라이드
+        //func = (a, b) -> a > b ? a : b; //함수형 인터페이스의 메소드 오버라이드
 
         int maxVal = func.max(10,100);
         System.out.println(maxVal);

@@ -1,2 +1,2 @@
 # study
-GitHub 실습을 위한 저장소입니다.
+Java Web Application을 공부하고 실습하는 공간

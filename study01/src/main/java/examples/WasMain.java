@@ -11,7 +11,10 @@ public class WasMain {
             listener = new ServerSocket(8080); //8080이란 포트에서 기다리는 서버소켓생성
             System.out.println("client를 기다립니다.");
             while(true) {
-                Socket client = listener.accept(); //블러킹 메소드-- 기다리는것!!! 클라이언트 오면 낚아채서 변수에 저장
+                Socket client = listener.accept(); //블러킹 메소드(반응오기전까지 멈춰있는 메소드 ex:키보드입력)
+                // -- 기다리는것!!! 클라이언트 오면 낚아채서 변수에 저장
+                //블러킹 메소드 쓰이면 안될때도 있겠지
+                //클라이언트가 튀어나옴
 
                 //System.out.println("접속한 client : "+client.toString());
 
