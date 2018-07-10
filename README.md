@@ -1,2 +1,2 @@
-# study
-Java Web ApplicationÀ» °øºÎÇÏ°í ½Ç½ÀÇÏ´Â °ø°£
+# Java Web Programming Next Step
+## 2ìž¥ ~ 12ìž¥ ì‹¤ìŠµ
