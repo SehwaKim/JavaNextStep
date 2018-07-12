@@ -1,9 +1,6 @@
 package webserver;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 
 import org.slf4j.Logger;
@@ -24,10 +21,66 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            String line = "";
+            line = br.readLine();
+            String[] arr = line.split(" ");
+            String method = arr[0].trim();
+            String url = arr[1].trim();
+            String httpVersion = arr[2].trim();
+            String contentType = "";
+            String contentLength = "";
+            String userAgent = "";
+            StringBuilder requestBody = new StringBuilder();
+
+            while ((line = br.readLine()) != null) {
+                if ("".equals(line)) {
+                    log.debug("빈줄");
+                    break;
+                }
+                arr = line.split(":");
+                if (line.startsWith("Content-Type")) {
+                    contentType = arr[1].trim();
+                }
+                if (line.startsWith("Content-Length")) {
+                    contentLength = arr[1].trim();
+                }
+                if (line.startsWith("User-Agent")) {
+                    userAgent = arr[1].trim();
+                }
+            }
+
+            log.debug("method: " + method);
+            log.debug("url: " + url);
+            log.debug("httpVersion: " + httpVersion);
+            log.debug("contentType:" + contentType);
+            log.debug("contentLength: " + contentLength);
+            log.debug("requestBody:" + requestBody);
+            log.debug("userAgent: " + userAgent);
+
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = "voodoo people".getBytes();
-            response200Header(dos, body.length);
-            responseBody(dos, body);
+
+            if (url.equals("/")) {
+                log.debug("/에 대한 응답 전송");
+                byte[] body = {};
+                body = "voodoo people".getBytes();
+                response200Header(dos, body.length);
+                responseBody(dos, body);
+            }
+
+            if (url.equals("/index.html")) {
+                byte[] buffer = new byte[1024];
+                File file = new File("webapp/index.html");
+                int length = (int) file.length();
+                response200Header(dos, length);
+                FileInputStream fileInputStream = new FileInputStream(file);
+                int cnt = 0;
+                while ((cnt = fileInputStream.read(buffer, 0, 1024)) > 0) {
+                    out.write(buffer);
+                    out.flush();
+                }
+            }
+
         } catch (IOException e) {
             log.error(e.getMessage());
         }
