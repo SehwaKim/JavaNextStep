@@ -3,6 +3,7 @@ package webserver;
 import java.io.*;
 import java.net.Socket;
 
+import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,29 +61,74 @@ public class RequestHandler extends Thread {
 
             DataOutputStream dos = new DataOutputStream(out);
 
-            if (url.equals("/")) {
-                log.debug("/에 대한 응답 전송");
-                byte[] body = {};
-                body = "voodoo people".getBytes();
-                response200Header(dos, body.length);
-                responseBody(dos, body);
-            }
-
-            if (url.equals("/index.html")) {
-                byte[] buffer = new byte[1024];
-                File file = new File("webapp/index.html");
-                int length = (int) file.length();
-                response200Header(dos, length);
-                FileInputStream fileInputStream = new FileInputStream(file);
-                int cnt = 0;
-                while ((cnt = fileInputStream.read(buffer, 0, 1024)) > 0) {
-                    out.write(buffer);
-                    out.flush();
-                }
-            }
+            response(out, url, dos);
 
         } catch (IOException e) {
             log.error(e.getMessage());
+        }
+    }
+
+    private void response(OutputStream out, String url, DataOutputStream dos) throws IOException {
+        if (url.equals("/")) {
+            log.debug("/에 대한 응답 전송");
+            byte[] body = {};
+            body = "voodoo people".getBytes();
+            response200Header(dos, body.length);
+            responseBody(dos, body);
+
+            return;
+        }
+
+        String fileName = "";
+
+        if (url.equals("/index.html")) {
+            fileName = "webapp/index.html";
+        }
+        if (url.equals("/user/form.html")) {
+            fileName = "webapp/user/form.html";
+        }
+        if (url.startsWith("/user/create")) {
+            String[] token = url.split("\\?");
+            String[] parameters = token[1].split("&");
+            String userId = "";
+            String password = "";
+            String name = "";
+            String email = "";
+
+            for (int i = 0; i < parameters.length; i++) {
+                String[] pair = parameters[i].split("=");
+                if (pair[0].startsWith("userId")) {
+                    userId = pair[1].trim();
+                }
+                if (pair[0].startsWith("password")) {
+                    password = pair[1].trim();
+                }
+                if (pair[0].startsWith("name")) {
+                    name = pair[1].trim();
+                }
+                if (pair[0].startsWith("email")) {
+                    email = pair[1].trim();
+                }
+            }
+
+            User user = new User(userId, password, name, email);
+
+            log.debug(user.toString());
+        }
+
+        if ("".equals(fileName)) {
+            fileName = "webapp/404.html";
+        }
+
+        byte[] buffer = new byte[1024];
+        File file = new File(fileName);
+        int length = (int) file.length();
+        response200Header(dos, length);
+        FileInputStream fileInputStream = new FileInputStream(file);
+        int cnt = 0;
+        while ((cnt = fileInputStream.read(buffer, 0, 1024)) > 0) {
+            out.write(buffer);
+            out.flush();
         }
     }
 
