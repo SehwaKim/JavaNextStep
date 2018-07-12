@@ -26,8 +26,9 @@ public class RequestHandler extends Thread {
             String line = "";
             line = br.readLine();
             String[] arr = line.split(" ");
-            String method = arr[0].trim();
+            String method = arr[0].trim().toUpperCase();
             String url = arr[1].trim();
+            String host = "";
             String httpVersion = arr[2].trim();
             String contentType = "";
             String contentLength = "";
@@ -38,6 +39,9 @@ public class RequestHandler extends Thread {
                 if ("".equals(line)) {
                     log.debug("빈줄");
                     break;
+                }
+                if (line.startsWith("Host")) {
+                    host = line.substring(line.indexOf(":") + 1).trim();
                 }
                 arr = line.split(":");
                 if (line.startsWith("Content-Type")) {
@@ -51,27 +55,35 @@ public class RequestHandler extends Thread {
                 }
             }
 
+            if (!"".equals(contentLength)) {
+                while ((line = br.readLine()) != null) {
+                    requestBody.append(line);
+                }
+            }
+
             log.debug("method: " + method);
             log.debug("url: " + url);
             log.debug("httpVersion: " + httpVersion);
+            log.debug("host: " + host);
             log.debug("contentType:" + contentType);
             log.debug("contentLength: " + contentLength);
             log.debug("requestBody:" + requestBody);
             log.debug("userAgent: " + userAgent);
+            log.debug(requestBody.toString());
 
             DataOutputStream dos = new DataOutputStream(out);
 
-            response(out, url, dos);
+            response(host, out, url, dos, method, requestBody);
 
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
 
-    private void response(OutputStream out, String url, DataOutputStream dos) throws IOException {
+    private void response(String host, OutputStream out, String url, DataOutputStream dos, String method, StringBuilder requestBody) throws IOException {
         if (url.equals("/")) {
             log.debug("/에 대한 응답 전송");
-            byte[] body = {};
+            byte[] body;
             body = "voodoo people".getBytes();
             response200Header(dos, body.length);
             responseBody(dos, body);
@@ -88,12 +100,19 @@ public class RequestHandler extends Thread {
             fileName = "webapp/user/form.html";
         }
         if (url.startsWith("/user/create")) {
-            String[] token = url.split("\\?");
-            String[] parameters = token[1].split("&");
             String userId = "";
             String password = "";
             String name = "";
             String email = "";
+            String[] parameters = {};
+
+            if ("GET".equals(method)) {
+                String[] token = url.split("\\?");
+                parameters = token[1].split("&");
+            }
+            if ("POST".equals(method)) {
+                parameters = requestBody.toString().split("&");
+            }
 
             for (int i = 0; i < parameters.length; i++) {
                 String[] pair = parameters[i].split("=");
@@ -114,6 +133,12 @@ public class RequestHandler extends Thread {
             User user = new User(userId, password, name, email);
 
             log.debug(user.toString());
+
+            response302Header(dos, "http://" + host + "/index.html");
+//            response200Header(dos, 0);
+//            responseBody(dos, new byte[]{});
+//            fileName = "webapp/404.html";
+            return;
         }
 
         if ("".equals(fileName)) {
@@ -137,6 +162,19 @@ public class RequestHandler extends Thread {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
             dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302Header(DataOutputStream dos, String redirectLocation) {
+        log.debug(redirectLocation);
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Content-Length: 0\r\n");
+            dos.writeBytes("Location: " + redirectLocation + "\r\n");
+            dos.writeBytes("Status: 302\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
