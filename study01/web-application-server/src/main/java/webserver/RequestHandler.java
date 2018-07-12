@@ -80,25 +80,29 @@ public class RequestHandler extends Thread {
 
             DataOutputStream dos = new DataOutputStream(out);
 
-            response(cookies, host, out, url, dos, method, requestBody);
+            makeResponse(cookies, host, out, url, dos, method, requestBody);
 
         } catch (IOException e) {
             log.error(e.getMessage());
         }
     }
 
-    private void response(String cookies, String host, OutputStream out, String url, DataOutputStream dos, String method, StringBuilder requestBody) throws IOException {
+    private void makeResponse(String cookies, String host, OutputStream out, String url, DataOutputStream dos, String method, StringBuilder requestBody) throws IOException {
         if (url.equals("/")) {
             log.debug("/에 대한 응답 전송");
             byte[] body;
             body = "voodoo people".getBytes();
-            response200Header(dos, body.length);
+            response200Header(dos, body.length, "text/html");
             responseBody(dos, body);
 
             return;
         }
 
         String fileName = "";
+
+        if (url.endsWith(".css")) {
+            fileName = "webapp"+url;
+        }
 
         if (url.equals("/index.html")) {
             fileName = "webapp/index.html";
@@ -119,7 +123,7 @@ public class RequestHandler extends Thread {
                 Collection<User> users = DataBase.findAll();
                 users.forEach(builder::append);
                 byte[] body = builder.toString().getBytes();
-                response200Header(dos, body.length);
+                response200Header(dos, body.length, "text/html");
                 responseBody(dos, body);
             }else {
                 response302Header(dos, "http://" + host + "/user/login.html", cookies);
@@ -224,10 +228,25 @@ public class RequestHandler extends Thread {
             fileName = "webapp/404.html";
         }
 
+        responseBody(out, dos, fileName);
+    }
+
+    private void responseBody(OutputStream out, DataOutputStream dos, String fileName) throws IOException {
         byte[] buffer = new byte[1024];
         File file = new File(fileName);
         int length = (int) file.length();
-        response200Header(dos, length);
+        String contentType = "";
+
+        if (fileName.endsWith(".css")) {
+            contentType = "text/css";
+        }
+
+        if (fileName.endsWith(".html")) {
+            contentType = "text/html";
+        }
+
+        response200Header(dos, length, contentType);
+
         FileInputStream fileInputStream = new FileInputStream(file);
         int cnt = 0;
         while ((cnt = fileInputStream.read(buffer, 0, 1024)) > 0) {
@@ -236,10 +255,10 @@ public class RequestHandler extends Thread {
         }
     }
 
-    private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
+    private void response200Header(DataOutputStream dos, int lengthOfBodyContent, String contentType) {
         try {
             dos.writeBytes("HTTP/1.1 200 OK \r\n");
-            dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+            dos.writeBytes("Content-Type: " + contentType + ";charset=utf-8\r\n");
             dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {
