@@ -1,0 +1,4 @@
+GET /user/create?userId=dvno&password=1235&name=Sehwa HTTP/1.1
+Host: localhost:8080
+Connection: keep-alive
+Accept: */*
