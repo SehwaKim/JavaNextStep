@@ -14,7 +14,7 @@
 			<maxHistory>60</maxHistory> <!-- 일자별 백업파일의 보관기간 -->
 		</rollingPolicy>
 		<encoder>
-			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5p] [%F]%M\(%L\) : %m%n</pattern>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%-5p] [%F] %M\(%L\) : %m%n</pattern>
 		</encoder>
 	</appender>
 
