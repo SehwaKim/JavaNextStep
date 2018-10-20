@@ -10,15 +10,15 @@ import java.util.Map;
 public class RequestLine {
     private static final Logger log = LoggerFactory.getLogger(RequestLine.class);
 
-    private String method;
+    private HttpMethod method;
     private String path;
     private Map<String, String> params = new HashMap<>();
 
     public RequestLine(String requestLine) {
         String[] token = requestLine.split(" ");
-        method = token[0];
+        method = HttpMethod.valueOf(token[0]);
 
-        if ("POST".equals(method)) {
+        if (method.isPost()) {
             path = token[1];
             return;
         }
@@ -32,7 +32,7 @@ public class RequestLine {
         params = HttpRequestUtils.parseQueryString(token[1].substring(index + 1));
     }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return method;
     }
 
@@ -40,7 +40,7 @@ public class RequestLine {
         return path;
     }
 
-    public String getParameter(String param) {
-        return params.get(param);
+    public Map<String, String> getParams() {
+        return params;
     }
 }

@@ -12,29 +12,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class HttpRequest {
-    private InputStream in;
-    private String method;
-    private String path;
     private Map<String, String> headers = new HashMap<>();
     private Map<String, String> params;
+    private RequestLine requestLine;
 
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
 
-
     public HttpRequest(InputStream in) throws Exception {
-        this.in = in;
         BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
         String line = br.readLine();
-        log.debug("request line: {}", line);
-
         if (line == null) {
             return;
         }
 
-        String[] token = line.split(" ");
-
-        int contentLength = 0;
-        Boolean logined = false;
+        requestLine = new RequestLine(line);
 
         while(true) {
             line = br.readLine();
@@ -42,36 +33,24 @@ public class HttpRequest {
                 break;
             }
             log.debug("header: {}", line);
-            if (line.contains("Content-Length")) {
-                contentLength = getContentLength(line);
-            }
-            if (line.contains("Cookie")) {
-                logined = isLogin(line);
-            }
             HttpRequestUtils.Pair pair = HttpRequestUtils.parseHeader(line);
             headers.put(pair.getKey(), pair.getValue());
         }
 
-        this.method = token[0].toUpperCase();
-        this.path = token[1];
-
-        if ("GET".equals(method)) {
-            String[] urlTokens = path.split("[?]");
-            this.path = urlTokens[0];
-            params = HttpRequestUtils.parseQueryString(urlTokens[1]);
-        }
-        if("POST".equals(method)){
+        if (requestLine.getMethod() == HttpMethod.POST) {
             String body = IOUtils.readData(br, Integer.parseInt(getHeader("Content-Length")));
             params = HttpRequestUtils.parseQueryString(body);
+        } else {
+            params = requestLine.getParams();
         }
     }
 
-    public String getMethod() {
-        return method;
+    public HttpMethod getMethod() {
+        return requestLine.getMethod();
     }
 
     public String getPath() {
-        return path;
+        return requestLine.getPath();
     }
 
     public String getHeader(String header) {

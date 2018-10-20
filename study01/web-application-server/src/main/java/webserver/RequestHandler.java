@@ -1,6 +1,7 @@
 package webserver;
 
 import db.DataBase;
+import http.HttpMethod;
 import http.HttpRequest;
 import model.User;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class RequestHandler extends Thread {
 
             DataOutputStream dos = new DataOutputStream(out);
 
-            if(request.getMethod().equals("POST")) {
+            if(request.getMethod().equals(HttpMethod.POST)) {
                 if("/user/create".equals(request.getPath())) {
                     BufferedReader br = new BufferedReader(new InputStreamReader(in));
                     String body = IOUtils.readData(br, Integer.parseInt(request.getHeader("Content-Length")));
