@@ -1,7 +1,6 @@
 package webserver;
 
 import db.DataBase;
-import http.HttpMethod;
 import http.HttpRequest;
 import model.User;
 import org.slf4j.Logger;
@@ -41,43 +40,41 @@ public class RequestHandler extends Thread {
 
             DataOutputStream dos = new DataOutputStream(out);
 
-            if(request.getMethod().equals(HttpMethod.POST)) {
-                if("/user/create".equals(request.getPath())) {
-                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
-                    String body = IOUtils.readData(br, Integer.parseInt(request.getHeader("Content-Length")));
-                    Map<String, String> params = HttpRequestUtils.parseQueryString(body);
-                    User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
-                    log.debug("User: {}", user);
-                    DataBase.addUser(user);
-                    response302Header(dos, "/index.html");
+            if("/user/create".equals(request.getPath())) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                String body = IOUtils.readData(br, Integer.parseInt(request.getHeader("Content-Length")));
+                Map<String, String> params = HttpRequestUtils.parseQueryString(body);
+                User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+                log.debug("User: {}", user);
+                DataBase.addUser(user);
+                response302Header(dos, "/index.html");
+                return;
+            }
+
+            if("/user/login".equals(request.getPath())) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                String body = IOUtils.readData(br, Integer.parseInt(request.getHeader("Content-Length")));
+                Map<String, String> params = HttpRequestUtils.parseQueryString(body);
+
+                User user = DataBase.findUserById(params.get("userId"));
+                if (Objects.isNull(user)) {
+                    responseResource(out, "/user/login_failed.html");
                     return;
                 }
 
-                if("/user/login".equals(request.getPath())) {
-                    BufferedReader br = new BufferedReader(new InputStreamReader(in));
-                    String body = IOUtils.readData(br, Integer.parseInt(request.getHeader("Content-Length")));
-                    Map<String, String> params = HttpRequestUtils.parseQueryString(body);
-
-                    User user = DataBase.findUserById(params.get("userId"));
-                    if (Objects.isNull(user)) {
-                        responseResource(out, "/user/login_failed.html");
-                        return;
-                    }
-
-                    if (user.getPassword().equals(params.get("password"))) {
-                        response302LoginSuccessHeader(dos);
-                    } else {
-                        responseResource(out, "/user/login_failed.html");
-                    }
-                    return;
+                if (user.getPassword().equals(params.get("password"))) {
+                    response302LoginSuccessHeader(dos);
+                } else {
+                    responseResource(out, "/user/login_failed.html");
                 }
+                return;
             }
 
             if("/user/list".equals(request.getPath())) {
-//                if (!logined) {
-//                    responseResource(out, "/user/login.html");
-//                    return;
-//                }
+                if (!isLogined(request)) {
+                    responseResource(out, "/user/login.html");
+                    return;
+                }
                 Collection<User> users = DataBase.findAll();
                 StringBuilder sb = new StringBuilder();
                 sb.append("<table border='1'>");
@@ -105,6 +102,10 @@ public class RequestHandler extends Thread {
         } catch(IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private boolean isLogined(HttpRequest request) {
+        return Boolean.parseBoolean(request.getCookies().getCookie("logined"));
     }
 
     private void response200CssHeader(DataOutputStream dos, int lengthOfBodyContent) {
