@@ -20,25 +20,30 @@ public class HttpRequest {
 
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
 
-    public HttpRequest(InputStream in) throws Exception {
-        BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-        String firstLine = br.readLine();
+    public HttpRequest(InputStream in) {
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+            String firstLine = br.readLine();
 
-        if (isBlank(firstLine)) {
-            throw new IllegalArgumentException();
-        }
+            if (isBlank(firstLine)) {
+                throw new IllegalArgumentException();
+            }
 
-        requestLine = new RequestLine(firstLine);
+            requestLine = new RequestLine(firstLine);
 
-        addHeader(br);
+            addHeader(br);
 
-        httpCookie = new HttpCookie(headers.get("Cookie"));
+            httpCookie = new HttpCookie(headers.get("Cookie"));
 
-        if (getMethod().isPost()) {
-            String body = IOUtils.readData(br, Integer.parseInt(getHeader("Content-Length")));
-            params = HttpRequestUtils.parseQueryString(body);
-        } else {
-            params = requestLine.getParams();
+            if (getMethod().isPost()) {
+                String body = IOUtils.readData(br, Integer.parseInt(getHeader("Content-Length")));
+                params = HttpRequestUtils.parseQueryString(body);
+            } else {
+                params = requestLine.getParams();
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
