@@ -1,5 +1,7 @@
 package webserver;
 
+import controller.Controller;
+import controller.CreateUserController;
 import db.DataBase;
 import http.HttpRequest;
 import http.HttpResponse;
@@ -33,56 +35,38 @@ public class RequestHandler extends Thread {
             HttpResponse response = new HttpResponse(out);
             String path = request.getPath();
 
-            if("/user/create".equals(path)) {
-                User user = new User(request.getParameter("userId"), request.getParameter("password"),
-                        request.getParameter("name"), request.getParameter("email"));
-                DataBase.addUser(user);
-                response.sendRedirect("/index.html");
+            /*if("/user/create".equals(path)) {
+                createUser(request, response);
             }
 
             if("/user/login".equals(path)) {
-                User user = DataBase.findUserById(request.getParameter("userId"));
-                if (Objects.isNull(user)) {
-                    response.sendRedirect("/user/login_failed.html");
-                    return;
-                }
-
-                if (user.getPassword().equals(request.getParameter("password"))) {
-                    response.addHeader("Set-Cookie", "logined=true");
-                    response.sendRedirect("/index.html");
-                } else {
-                    response.sendRedirect("/user/login_failed.html");
-                }
+                login(request, response);
             }
 
             if("/user/list".equals(path)) {
-                if (!isLogined(request)) {
-                    response.sendRedirect("/user/login.html");
-                    return;
-                }
-
-                Collection<User> users = DataBase.findAll();
-                StringBuilder sb = new StringBuilder();
-                sb.append("<table border='1'>");
-                for (User user : users) {
-                    sb.append("<tr>");
-                    sb.append("<td>" + user.getUserId() + "</td>");
-                    sb.append("<td>" + user.getName() + "</td>");
-                    sb.append("<td>" + user.getEmail() + "</td>");
-                    sb.append("</tr>");
-                }
-                sb.append("</table>");
-                response.forwardBody(sb.toString());
+                listUser(request, response);
             } else {
                 response.forward(path);
+            }*/
+
+            Controller controller = RequestMapping.getController(path);
+
+            if (controller == null) {
+                response.forward(getDefaultPath(path));
+                return;
             }
+
+            controller.service(request, response);
 
         } catch(IOException e) {
             log.error(e.getMessage());
         }
     }
 
-    private boolean isLogined(HttpRequest request) {
-        return Boolean.parseBoolean(request.getCookies().getCookie("logined"));
+    private String getDefaultPath(String path) {
+        if ("/".equals(path)) {
+            return "/index.html";
+        }
+        return path;
     }
 }
